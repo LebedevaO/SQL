@@ -22,15 +22,6 @@ WHERE amount < (
       );
 SELECT * FROM ordering;
 
-
-# Добавление данных SQL запросом. 
-INSERT INTO book (book_id,title,author,price,amount) 
-VALUES (2,'Белая гвардия', 'Булгаков М.А.', 540.50, 5),
-(3,'Идиот', 'Достоевский Ф.М.', 460.00, 10),
-(4,'Братья Карамазовы', 'Достоевский Ф.М.', 799.01, 2);
-select * from book;
-
-
 # Выборка данных,вычисляемые столбцы, логические функции
 SELECT title, author, amount,
 ROUND ((price * 70/100),2) as new_price 
@@ -90,6 +81,13 @@ FROM book
 WHERE amount < (select MAX(amount) from book);    
 
 #Запросы корректировки данных данных (обновление, добавление, удаление).
+
+INSERT INTO book (book_id,title,author,price,amount) 
+VALUES (2,'Белая гвардия', 'Булгаков М.А.', 540.50, 5),
+(3,'Идиот', 'Достоевский Ф.М.', 460.00, 10),
+(4,'Братья Карамазовы', 'Достоевский Ф.М.', 799.01, 2);
+select * from book;
+
 INSERT INTO book(title, author, price, amount) 
 SELECT title, author, price, amount 
 FROM supply
