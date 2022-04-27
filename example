@@ -1,4 +1,4 @@
-# Создние таблиц.
+# Создание таблиц SQL запросом
 CREATE TABLE book (
     book_id INT PRIMARY KEY AUTO_INCREMENT, 
     title VARCHAR(50), 
@@ -10,3 +10,116 @@ CREATE TABLE book (
     FOREIGN KEY (genre_id)  REFERENCES genre (genre_id)
 );
 SHOW COLUMNS FROM book;
+
+CREATE TABLE ordering as
+SELECT author, title, 
+    (SELECT ROUND(AVG(amount))
+     FROM  book) as amount 
+FROM book
+WHERE amount < (
+        SELECT round(AVG(amount))
+        FROM book
+      );
+SELECT * FROM ordering;
+
+
+# Добавление данных SQL запросом. 
+INSERT INTO book (book_id,title,author,price,amount) 
+VALUES (2,'Белая гвардия', 'Булгаков М.А.', 540.50, 5),
+(3,'Идиот', 'Достоевский Ф.М.', 460.00, 10),
+(4,'Братья Карамазовы', 'Достоевский Ф.М.', 799.01, 2);
+select * from book;
+
+
+# Выборка данных,вычисляемые столбцы, логические функции
+SELECT title, author, amount,
+ROUND ((price * 70/100),2) as new_price 
+FROM book;
+
+SELECT author,title,
+ROUND(IF(author = 'Булгаков М.А.',price*1.1, IF(author = 'Есенин С.А.', price*1.05,price)),2) AS new_price
+FROM book;
+
+SELECT title,author
+FROM book
+WHERE (title like  "_% _%") and (author like '% С.%');
+
+SELECT title,amount,
+(amount>=10,"много","мало") as наличие
+FROM book 
+WHERE author = "Достоевский Ф.М."
+ORDER BY amount;
+
+SELECT name, city, date_first, date_last
+FROM trip
+WHERE DATEDIFF(date_last, date_first) + 1 <= ANY(
+    SELECT MIN(DATEDIFF(date_last, date_first) + 1)
+    FROM trip);
+
+SELECT MONTHNAME(date_first) as Месяц,
+   count(MONTHNAME(date_first)) as Количество
+FROM trip
+GROUP BY Месяц
+ORDER BY Количество desc,Месяц;
+
+
+# Запросы. Групповые, вложенные. 
+SELECT author, SUM(price*amount) as Стоимость
+FROM book
+WHERE title <> 'Идиот' and title <> 'Белая гвардия'
+GROUP BY author
+HAVING Стоимость > 5000
+ORDER BY SUM(price*amount)desc;
+
+SELECT author,title,price
+FROM book
+WHERE price <= (select AVG(price) from book)
+ORDER BY price DESC;
+
+SELECT author,title,amount
+FROM book
+WHERE amount in (
+    SELECT amount 
+    FROM book
+    GROUP BY amount
+    HAVING COUNT(amount) = 1);
+    
+SELECT title, author, amount, 
+       (SELECT max(amount) FROM book) - amount as Заказ 
+FROM book
+WHERE amount < (select MAX(amount) from book);    
+
+#Запросы корректировки данных данных (обновление, добавление, удаление).
+INSERT INTO book(title, author, price, amount) 
+SELECT title, author, price, amount 
+FROM supply
+WHERE author NOT IN (
+        SELECT author
+        FROM book
+      );
+
+INSERT INTO book (title, author, price, amount) 
+SELECT title, author, price, amount 
+FROM supply
+WHERE author NOT IN( 'Булгаков М.А.' ,  'Достоевский Ф.М.');
+
+UPDATE book, supply 
+SET book.amount = book.amount + supply.amount,
+    book.price = (book.price + supply.price)/2
+WHERE book.title = supply.title AND book.author = supply.author;
+
+DELETE FROM supply 
+WHERE author IN (
+        SELECT author
+        FROM book
+        GROUP BY author 
+        Having SUM(amount) > 10
+      );
+
+UPDATE fine AS f, traffic_violation AS tv
+    SET f.sum_fine=IF(f.sum_fine is Null,
+            (SELECT sum_fine FROM traffic_violation tv WHERE f.violation=tv.violation),
+             f.sum_fine);
+
+
+
